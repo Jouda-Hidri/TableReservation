@@ -1,6 +1,5 @@
 package orderbird.challenge.service;
 
-import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -28,38 +27,63 @@ public class TableService {
 	@Autowired
 	ReservationRepository reservationRepository;
 
-	public GuestTable create(GuestTable table) {
-		return guestTableRepository.save(table);
+	public long createGuestTable(GuestTable table) {
+		GuestTable created = guestTableRepository.save(table);
+		if (created != null) {
+			return created.getId();
+		}
+		return 0L;
 	}
 
+	/**
+	 * Returns the response status depending whether the reservation was successful
+	 * or not. CREATED : in case the reservation was created, CONFLICT : table
+	 * reserved at that time, NOT_FOUND: table not found or INTERNAL_SERVER_ERROR :
+	 * in case persisting the reservation failed
+	 * 
+	 * @param table-id
+	 * @param reservation
+	 * @return the HTTP status
+	 */
 	public HttpStatus createReservation(long guestTableId, Reservation reservation) {
 		Optional<GuestTable> guestTable = guestTableRepository.findById(guestTableId);
-		
 		if (guestTable.isPresent()) {
-
 			if (!isReserved(guestTable.get(), //
 					reservation.getStartTime(), //
 					reservation.getEndTime())) {
-		
 				log.info("Reservation : " + reservation);
 				reservation.setGuestTable(guestTable.get());
-				reservationRepository.save(reservation);
-				return HttpStatus.CREATED;
-			
+				Reservation created = reservationRepository.save(reservation);
+				if(created != null) {
+					return HttpStatus.CREATED;
+				}
+				return HttpStatus.INTERNAL_SERVER_ERROR;
 			}
-			
 			return HttpStatus.CONFLICT;
 		}
-		
 		return HttpStatus.NOT_FOUND;
 	}
 
-	private boolean isReserved(GuestTable guestTable, Timestamp startTime, Timestamp endTime) {
+	public GuestTable getGuestTableById(long guestTableId) {
+		Optional<GuestTable> guestTable = guestTableRepository.findById(guestTableId);
+		if (guestTable.isPresent()) {
+			return guestTable.get();
+		}
+		return null;
+	}
+
+	private boolean isReserved(GuestTable guestTable, long startTime, long endTime) {
 		Collection<Reservation> reservations = guestTable.getReservations();
 
 		List<Reservation> conflictsList = reservations.stream() //
-				.filter(r -> r.getStartTime().before(endTime) //
-						&& r.getEndTime().after(startTime)) //
+				.filter(r -> (r.getStartTime() < endTime //
+						&& r.getEndTime() > startTime)//
+						|| (r.getStartTime() < startTime //
+								&& r.getEndTime() > endTime)
+						|| (r.getStartTime() > startTime //
+								&& r.getEndTime() < endTime)//
+						|| (r.getStartTime() == startTime //
+								&& r.getEndTime() == endTime)) //
 				.collect(Collectors.toList());
 		
 		if (conflictsList.isEmpty()) {
@@ -67,14 +91,5 @@ public class TableService {
 		}
 		
 		return true;
-	}
-
-	public Collection<Reservation> getReservationsByGuestTableId(long guestTableId) {
-		Optional<GuestTable> guestTable = guestTableRepository.findById(guestTableId);
-		if (guestTable.isPresent()) {
-			//FIXME
-			return guestTable.get().getReservations();
-		}
-		return null;
 	}
 }

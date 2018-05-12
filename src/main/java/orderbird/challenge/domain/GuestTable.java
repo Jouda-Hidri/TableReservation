@@ -6,10 +6,13 @@ import java.util.LinkedHashSet;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 public class GuestTable {
@@ -20,7 +23,8 @@ public class GuestTable {
 	
 	String name;
 	
-	@OneToMany(mappedBy = "guestTable", cascade = CascadeType.ALL)
+	@JsonIgnoreProperties("guestTable")
+	@OneToMany(mappedBy = "guestTable", cascade = CascadeType.ALL, fetch=FetchType.EAGER)
 	Collection<Reservation> reservations = new LinkedHashSet<Reservation>();
 
 	public long getId() {

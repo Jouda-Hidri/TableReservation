@@ -1,7 +1,5 @@
 package orderbird.challenge.domain;
 
-import java.sql.Timestamp;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -19,9 +17,9 @@ public class Reservation {
 
 	String customerName;
 	
-	Timestamp startTime;
+	long startTime;
 	
-	Timestamp endTime;
+	long endTime;
 	
 	@ManyToOne
 	@JoinColumn(name = "guest_table_id")
@@ -43,19 +41,19 @@ public class Reservation {
 		this.customerName = customerName;
 	}
 
-	public Timestamp getStartTime() {
+	public long getStartTime() {
 		return startTime;
 	}
 
-	public void setStartTime(Timestamp startTime) {
+	public void setStartTime(long startTime) {
 		this.startTime = startTime;
 	}
 
-	public Timestamp getEndTime() {
+	public long getEndTime() {
 		return endTime;
 	}
 
-	public void setEndTime(Timestamp endTime) {
+	public void setEndTime(long endTime) {
 		this.endTime = endTime;
 	}
 
